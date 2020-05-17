@@ -60,8 +60,8 @@ int main()
     for (int i = 0; i < COL; i++) {
         sum = 0;
         for (int j = 0; j < ROW; j++) {
-            if ((matrix[i][j] > 0) && (matrix[j][j] % 2 == 0)) {
-                sum += matrix[i][j];
+            if ((matrix[i][j] < 0) && (matrix[i][j] % 2 != 0)) {
+                sum += abs(matrix[i][j]);
             }
         }
         sumcol[i] = sum;
