@@ -1,2 +1,2 @@
 # Cpp-samples
-personal c++ study samples of code 
+A personal c++ samples of code, study purpose only
