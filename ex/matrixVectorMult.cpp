@@ -26,9 +26,3 @@ int main()
 
     return 0;
 }
-
-// Declaration of the vector
-
-// Calculates the product of the matrix by the vector
-
-// Outputs the result of matrix by the vector
