@@ -19,7 +19,7 @@ struct Matrix3 {
     // Prints out the matrix's values
     void MatrixPrint();
     //     // Returns one of the columns of a matrix
-    //     Vector GetCol(int index) const;
+    //     Vector3 GetCol(int index) const;
     //     // Returns one of the rows of a matrix
-    //     Vector GetRow(int index) const;
+    //     Vector3 GetRow(int index) const;
 };

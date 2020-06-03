@@ -16,7 +16,7 @@ int main()
 {
     // Matrix object
     Matrix3 m { 3, 3 };
-    Vector v { 1, 2, 3 };
+    Vector3 v { 1, 2, 3 };
     // Initializes the matrix with random values
     m.IdentRand();
     m.MatrixPrint();
@@ -26,3 +26,9 @@ int main()
 
     return 0;
 }
+
+// Declaration of the vector
+
+// Calculates the product of the matrix by the vector
+
+// Outputs the result of matrix by the vector

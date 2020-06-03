@@ -1,4 +1,4 @@
-#include "matrix.h"
+#include "matrix3.h"
 #include <iomanip>
 #include <iostream>
 
@@ -39,9 +39,9 @@ void Matrix3::MatrixPrint()
     }
 }
 
-// Vector Matrix3::GetCol(int index) const
+// Vector3 Matrix3::GetCol(int index) const
 // {
-//     Vector result;
+//     Vector3 result;
 //     result.x = p_mtx[index][0];
 //     result.y = p_mtx[index][1];
 //     result.z = p_mtx[index][2];
@@ -49,9 +49,9 @@ void Matrix3::MatrixPrint()
 //     return result;
 // }
 
-// Vector Matrix3::GetRow(int index) const
+// Vector3 Matrix3::GetRow(int index) const
 // {
-//     Vector result;
+//     Vector3 result;
 //     result.x = p_mtx[0][index];
 //     result.x = p_mtx[1][index];
 //     result.x = p_mtx[2][index];
