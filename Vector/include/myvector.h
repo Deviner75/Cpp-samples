@@ -1,119 +1,172 @@
-template <typename T>
-class Vector {
-    std::size_t capacity;
-    std::size_t length;
-    T* buffer;
+// An std::vector like container for a learning processes
+// base source: https://lokiastari.com/blog/2016/03/12/vector-resize/index.html
 
-    struct Deleter {
-        void operator()(T* buffer) const
-        {
-            ::operator delete(buffer);
-        }
-    };
+#include <cstddef>
+#include <iostream>
+#include <cstddef>
+#include <algorithm>
+
+template <typename T>
+class MyVector 
+{
+	std::size_t m_capacity;
+	std::size_t m_length;
+	T* m_buffer;
 
 public:
-    Vector(int capacity = 10)
-        : capacity(capacity)
-        , length(0)
-        , buffer(static_cast<T*>(::operator new(sizeof(T) * capacity)))
-    {
-    }
-    ~Vector()
-    {
-        // Make sure the buffer is deleted even with exceptions
-        // This will be called to release the pointer at the end
-        // of scope.
-        std::unique_ptr<T, Deleter> deleter(buffer, Deleter());
+	MyVector(int capacity = 10)
+		: m_capacity(capacity)
+		, m_length(0)
+		, m_buffer(static_cast<T*>(::operator new(sizeof(T) * capacity)))
+	{
+		std::cout << "! constructed !" << std::endl;
+	}
+	~MyVector()
+	{
+		for (int loop = 0; loop < m_length; ++loop) 
+		{
+			m_buffer[m_length - 1 - loop].~T();
+		}
+		::operator delete(m_buffer);
+		std::cout << "! destructed !" << std::endl;
+	}
+	MyVector(MyVector const& copy)
+		: m_capacity(copy.m_length)
+		, m_length(0)
+		, m_buffer(static_cast<T*>(::operator new(sizeof(T) * m_capacity)))
+	{
+		try {
+			for (int loop = 0; loop < copy.m_length; ++loop) 
+			{
+				push_back(copy.m_buffer[loop]);
+			}
+		} catch (...) {
+			for (int loop = 0; loop < m_length; ++loop) {
+				m_buffer[m_length - 1 - loop].~T();
+			}
+			::operator delete(m_buffer);
+			throw;
+		}
+		std::cout << "! constructed !" << std::endl;
+	}
+	MyVector(MyVector&& move) noexcept
+		: m_capacity(0)
+		, m_length(0)
+		, m_buffer(nullptr)
+	{
+		move.swap(*this);
+	}
+	MyVector& operator=(MyVector const& copy)
+	{
+		// Copy and Swap idiom
+		MyVector<T> tmp(copy);
+		tmp.swap(*this);
+		return *this;
+	}
+	MyVector& operator=(MyVector&& move) noexcept
+	{
+		move.swap(*this);
+		return *this;
+	}
 
-        // Call the destructor on all the members in reverse order
-        for (int loop = 0; loop < length; ++loop) {
-            // Note we destroy the elements in reverse order.
-            buffer[length - 1 - loop].~T();
-        }
-    }
-    Vector(Vector const& copy)
-        : capacity(copy.length)
-        , length(0)
-        , buffer(static_cast<T*>(::operator new(sizeof(T) * capacity)))
-    {
-        try {
-            for (int loop = 0; loop < copy.length; ++loop) {
-                push_back(copy.buffer[loop]);
-            }
-        } catch (...) {
-            std::unique_ptr<T, Deleter> deleter(buffer, Deleter());
-            // If there was an exception then destroy everything
-            // that was created to make it exception safe.
-            for (int loop = 0; loop < length; ++loop) {
-                buffer[length - 1 - loop].~T();
-            }
+	// Modifiers
+	// No-throw guarantee swap
+	void swap(MyVector& other) noexcept
+	{
+		using std::swap;
+		swap(m_capacity, other.m_capacity);
+		swap(m_length, other.m_length);
+		swap(m_buffer, other.m_buffer);
+	}
+	void push_back(T const& value)
+	{
+		resizeIfRequire();
+		pushBackInternal(value);
+	}
+	void pop_back()
+	{
+		--m_length;
+		m_buffer[m_length].~T();
+	}
+	void clear() noexcept
+	{
+		for (int loop = 0; loop < m_length; ++loop)
+		{
+			m_buffer[m_length - 1 - loop].~T();
+		}
+		m_length = 0;
+	}
+	void resize(std::size_t new_size)
+	{
+		if (new_size > m_length)
+		{
+			try
+			{
+				for (int loop = m_length; loop < new_size; ++loop)
+				{
+					T tmp = {};
+					push_back(tmp);
+				}
+			}
+			catch (...)
+			{
+				for (int loop = 0; loop < m_length; ++loop)
+				{
+					m_buffer[m_length - 1 - loop].~T();
+				}
+				::operator delete(m_buffer);
+				throw;
+			}
+		}
+		else if (new_size < m_length)
+		{
+			for (int loop = m_length; loop > new_size; --loop)
+			{
+				m_buffer[m_length - 1 - loop].~T();
+				m_length--;
+			}
+		}
+	}
+	//void erase(const size_t& pos)
+	
+	// Capacity
+	std::size_t capacity() const noexcept
+	{
+		return m_capacity;
+	}
+	std::size_t size() const { return m_length; }
+	void reserve(std::size_t capacityUpperBound)
+	{
+		if (capacityUpperBound > m_capacity)
+			reserveCapacity(capacityUpperBound);
+	}
 
-            // Make sure the exceptions continue propagating after
-            // the cleanup has completed.
-            throw;
-        }
-    }
-    Vector& operator=(Vector const& copy)
-    {
-        // Copy and Swap idiom
-        Vector<T> tmp(copy);
-        tmp.swap(*this);
-        return *this;
-    }
-    Vector(Vector&& move) noexcept
-        : capacity(0)
-        , length(0)
-        , buffer(nullptr)
-    {
-        move.swap(*this);
-    }
-    Vector& operator=(Vector&& move) noexcept
-    {
-        move.swap(*this);
-        return *this;
-    }
-    void swap(Vector& other) noexcept
-    {
-        using std::swap;
-        swap(capacity, other.capacity);
-        swap(length, other.length);
-        swap(buffer, other.buffer);
-    }
-    void push_back(T const& value)
-    {
-        resizeIfRequire();
-        pushBackInternal(value);
-    }
-    void pop_back()
-    {
-        --length;
-        buffer[length].~T();
-    }
-    void reserve(std::size_t capacityUpperBound)
-    {
-        if (capacityUpperBound > capacity) {
-            reserveCapacity(capacityUpperBound);
-        }
-    }
+	// Element access
+	T& operator[](std::size_t index) { return m_buffer[index]; }
+	T const& operator[](std::size_t index) const { return m_buffer[index]; }
 
 private:
-    void resizeIfRequire()
-    {
-        if (length == capacity) {
-            std::size_t newCapacity = std::max(2.0, capacity * 1.5);
-            reserveCapacity(newCapacity);
-        }
-    }
-    void pushBackInternal(T const& value)
-    {
-        new (buffer + length) T(value);
-        ++length;
-    }
-    void reserveCapacity(std::size_t newCapacity)
-    {
-        Vector<T> tmpBuffer(newCapacity);
-        std::for_each(buffer, buffer + length, [&tmpBuffer](T const& v) { tmpBuffer.pushBackInternal(v); });
 
-        tmpBuffer.swap(*this);
-    }
+	// Memory allocation area
+	void resizeIfRequire()
+	{
+		if (m_length == m_capacity) 
+		{
+			std::cout << "resize" << std::endl;
+			std::size_t newCapacity = std::max(2.0, m_capacity * 1.5);
+			reserveCapacity(newCapacity);
+		}
+	}
+	void pushBackInternal(T const& value)
+	{
+		new (m_buffer + m_length) T(value);
+		++m_length;
+	}
+	void reserveCapacity(std::size_t newCapacity)
+	{
+		MyVector<T> tmpBuffer(newCapacity);
+		std::for_each(m_buffer, m_buffer + m_length, [&tmpBuffer](T const& v) { tmpBuffer.pushBackInternal(v); });
+
+		tmpBuffer.swap(*this);
+	}
 };
