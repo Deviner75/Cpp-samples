@@ -1,12 +1,16 @@
-﻿################################################################################
-# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
-################################################################################
-
-/CppProperties.json
+﻿*.dll
+*.exe
+*.exp
+*.ilk
+*.lib
+*.ncb
+*.log
+*.pdb
+*.vcproj.*.user
+[Dd]ebug
+[Rr]elease
 /.vs
-*.sln
-*.vcxproj
-*.filters
-*.user
-/Vector/bin
-/Vector/.vs/Vector/v16
+*.ipch
+/Matrix/.vs/Matrix/v16
+/Matrix/.vs
+/Vector/.vs

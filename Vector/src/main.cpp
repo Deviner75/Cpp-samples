@@ -63,6 +63,11 @@ int main()
 		b = v;
 		std::cout << "b.size(): " << b.size() << std::endl;
 		std::cout << "b.capacity(): " << b.capacity() << std::endl;
+
+		MyVector<float> c(10);
+		c.push_back(10);
+		c.push_back(10);
+		c.swap(v);
 	}
 
 	// memory leak detection
