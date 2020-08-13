@@ -1,3 +1,6 @@
 language: cpp
 compiler: gcc
-script: ./Matrix/src/main.cpp
+
+script:
+- g++ main.cpp -std=c++17 -o travis_gcc_cpp17
+- ./travis_gcc_cpp98
