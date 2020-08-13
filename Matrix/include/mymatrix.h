@@ -13,6 +13,8 @@ public:
 	using reference = value_type&;
 	using const_reference = value_type const&;
 	using size_type = std::size_t;
+	using iterator = typename std::vector<value_type>::iterator;
+	using const_iterator = typename std::vector<value_type>::const_iterator;
 
 private:
 	size_type m_rows;
@@ -40,11 +42,20 @@ public:
 		tmp.swap(*this);
 		return *this;
 	}
-	MyMatrix& operator=(MyMatrix<value_type>&& move)
+	MyMatrix& operator=(MyMatrix<value_type>&& move) noexcept
 	{
 		move.swap(*this);
 		return *this;
 	}
+
+	// Iterators
+	iterator       begin() { return m_buffer.begin(); }
+	const_iterator begin() const { return m_buffer.begin(); }
+	const_iterator cbegin() const { return begin(); }
+
+	iterator       end() { return m_buffer.end(); }
+	const_iterator end() const { return m_buffer.end(); }
+	const_iterator cend() const { return end(); }
 
 	// Access operators with validation
 	reference operator()(size_type x, size_type y)
@@ -76,7 +87,7 @@ public:
 		assert(m_rows == m_cols && "Matrix must be square!");
 		for (size_type x = 0; x < m_rows; ++x) {
 			for (size_type y = 0; y < m_cols; ++y)
-				m_buffer[m_cols * x + y] = static_cast<T>(x == y);
+				m_buffer[m_cols * x + y] = static_cast<T>(x == y); // CORRECT ?
 		}
 	}
 	void fill(value_type value)
@@ -100,8 +111,6 @@ public:
 	{ return m_rows; }
 	size_type cols() const
 	{ return m_cols; }
-	std::vector<value_type> data() const
-	{ return m_buffer; }
 	void print(std::ostream& out) const
 	{
 		for (size_t i(0); i < m_rows; i++) {
@@ -115,9 +124,8 @@ public:
 	// Matrix mathematical operations
 	MyMatrix<T>  operator+(MyMatrix<T> const& mtx) const
 	{
-		MyMatrix<value_type> result(*this);
-		result += mtx;
-		return result;
+		MyMatrix<T> result(*this);
+		return result += mtx;
 	}
 	MyMatrix<T>& operator+=(MyMatrix<T> const& mtx)
 	{
@@ -127,9 +135,8 @@ public:
 	}
 	MyMatrix<T>  operator-(MyMatrix<T> const& mtx) const
 	{
-		MyMatrix<value_type> result(*this);
-		result -= mtx;
-		return result;
+		MyMatrix<T> result(*this);
+		return result -= mtx;
 	}
 	MyMatrix<T>& operator-=(MyMatrix<T> const& mtx)
 	{
@@ -140,10 +147,8 @@ public:
 	}
 	MyMatrix<T>  operator*(MyMatrix<T> const& mtx) const
 	{
-		assert(m_cols == mtx.m_rows && "Invalid Matrix demensions.");
-		MyMatrix<value_type> tmp(*this);
-		tmp *= mtx;
-		return tmp;
+		MyMatrix<T> tmp(*this);
+		return tmp *= mtx;
 	}
 	MyMatrix<T>  operator*=(MyMatrix<T> const& mtx)
 	{
@@ -157,10 +162,11 @@ public:
 				}
 			}
 		}
-		result.swap(*this); // CORRECT?
-		return *this;
+		return result;
 	}
-	bool operator==(MyMatrix<T> const& mtx) const
+
+	// Comparision
+	bool operator==(MyMatrix<T> const& mtx) const noexcept
 	{
 		if (m_rows != mtx.m_rows || m_cols != mtx.m_cols)
 			return false;
@@ -169,15 +175,7 @@ public:
 
 		return true;
 	}
-	bool operator!=(MyMatrix<T> const& mtx) const
-	{
-		if (m_rows != mtx.m_rows || m_cols != mtx.m_cols)
-			return !false;
-
-		std::for_each(m_buffer.cbegin(), m_buffer.cend(), [&](const size_type i) { return m_buffer[i] != mtx.m_buffer[i]; });
-
-		return !true;
-	}
+	bool operator!=(MyMatrix<T> const& mtx) const noexcept { return !(*this == mtx); }
 
 	// Matrix/scalar operations
 	MyMatrix<T>& operator+(const T& value)
@@ -208,7 +206,6 @@ std::ostream& operator<<(std::ostream& out, MyMatrix<T> const& m)
 	m.print(out);
 	return out;
 }
-
 template <typename T>
 MyMatrix<T> transpose(MyMatrix<T> const& mtx)
 {
@@ -218,26 +215,26 @@ MyMatrix<T> transpose(MyMatrix<T> const& mtx)
 	MyMatrix<T> result(cols, rows);
 
 	for (std::size_t r = 0; r < rows * cols; r++) {
-		int i = r / rows;
-		int j = r % rows;
+		std::size_t i = r / rows;
+		std::size_t j = r % rows;
 		result[r] = mtx[cols * j + i];
 	}
 
 	return result;
 }
 template <typename T>
-void transpose(MyMatrix<T>& mtx)
+MyMatrix<T> inverse(MyMatrix<T> const& mtx)
 {
-	std::size_t rows = mtx.rows();
-	std::size_t cols = mtx.cols();
+	MyMatrix<T> result(mtx);
 
-	MyMatrix<T> result(cols, rows);
+	std::transform(result.begin(), result.end(), result.begin(), [](const T index) {return 1 / index; });
 
-	for (std::size_t r = 0; r < rows * cols; r++) {
-		int i = r / rows;
-		int j = r % rows;
-		result[r] = mtx[cols * j + i];
-	}
-
-	result.swap(mtx);
+	return result;
+}
+template <typename T>
+MyMatrix<T> symmetric(MyMatrix<T> const& mtx)
+{
+	assert(mtx.cols() == mtx.rows() && "Invalid Matrix demensions.");
+	MyMatrix<T> result(mtx);
+	return mtx * transpose(mtx);
 }

@@ -74,7 +74,14 @@ int main()
 		mtx2 = mtx2 / 2;
 		std::cout << mtx2 << "\n";
 
+		std::cout << "mtx1 inverse" << std::endl;
+		mtx2 = inverse(mtx2);
+		std::cout << mtx2 << "\n";
 
+		std::cout << "a diagonalizesymmetric" << std::endl;
+		a.fillRand();
+		a = symmetric(a);
+		std::cout << a << "\n";
 	}
 
 	system("pause");
