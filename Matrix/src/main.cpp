@@ -60,7 +60,7 @@ int main()
 		std::cout << "mtx2 before transpose" << std::endl;
 		std::cout << mtx2 << "\n";
 		std::cout << "mtx2 after transpose" << std::endl;
-		transpose(mtx2);
+		mtx2 = transpose(mtx2);
 		std::cout << mtx2 << "\n";
 
 		// Matrix/scalar operations

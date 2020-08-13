@@ -25,24 +25,33 @@ public:
 	MyMatrix(size_type dimx = 3, size_type dimy = 3)
 		: m_rows(dimx)
 		, m_cols(dimy)
-	{
-		m_buffer.resize(dimx * dimy);
-	}
-	MyMatrix(MyMatrix<value_type> const& copy)
+		, m_buffer(dimx * dimy)
+	{}
+	// Copy constructor
+	MyMatrix(MyMatrix const& copy)
 		: m_rows(copy.m_rows)
 		, m_cols(copy.m_cols)
 		, m_buffer(copy.m_buffer)
 	{}
-	MyMatrix(MyMatrix<value_type>&& move) noexcept
-	{ *this = std::move(move); }
-	MyMatrix& operator=(MyMatrix<value_type> const& copy)
+	// Move constructor
+	MyMatrix(MyMatrix&& move) noexcept
+	{
+		*this = std::move(move);
+	}
+	explicit MyMatrix<T>(value_type begin, value_type end, size_type dimx, size_type dimy)
+	{
+
+	}
+	// Copy assignment
+	MyMatrix& operator=(MyMatrix const& copy)
 	{
 		// Copy and Swap idiom
 		MyMatrix<value_type> tmp(copy);
 		tmp.swap(*this);
 		return *this;
 	}
-	MyMatrix& operator=(MyMatrix<value_type>&& move) noexcept
+	// Move assignment
+	MyMatrix& operator=(MyMatrix&& move) noexcept
 	{
 		move.swap(*this);
 		return *this;
@@ -50,15 +59,15 @@ public:
 
 	// Iterators
 	iterator       begin() { return m_buffer.begin(); }
-	const_iterator begin() const { return m_buffer.begin(); }
+	const_iterator begin()  const { return m_buffer.begin(); }
 	const_iterator cbegin() const { return begin(); }
 
 	iterator       end() { return m_buffer.end(); }
-	const_iterator end() const { return m_buffer.end(); }
-	const_iterator cend() const { return end(); }
+	const_iterator end()    const { return m_buffer.end(); }
+	const_iterator cend()   const { return end(); }
 
 	// Access operators with validation
-	reference operator()(size_type x, size_type y)
+	reference operator()(const size_type x, const size_type y)
 	{
 		size_type index = m_cols * x + y;
 		assert(index < m_buffer.size() && "Index is out of range");
@@ -113,44 +122,46 @@ public:
 	{ return m_cols; }
 	void print(std::ostream& out) const
 	{
-		for (size_t i(0); i < m_rows; i++) {
-			for (size_t j(0); j < m_cols; j++) {
-				out << m_buffer[m_cols * i + j] << ' ';
+		if (!m_buffer.empty()) {
+			for (size_t i = 0; i < m_rows; i++) {
+				for (size_t j = 0; j < m_cols; j++) {
+					out << m_buffer[m_cols * i + j] << ' ';
+				}
+				out << std::endl;
 			}
-			out << std::endl;
 		}
 	}
 
 	// Matrix mathematical operations
-	MyMatrix<T>  operator+(MyMatrix<T> const& mtx) const
+	MyMatrix  operator+(MyMatrix const& mtx) const
 	{
 		MyMatrix<T> result(*this);
 		return result += mtx;
 	}
-	MyMatrix<T>& operator+=(MyMatrix<T> const& mtx)
+	MyMatrix& operator+=(MyMatrix const& mtx)
 	{
 		assert(m_rows == mtx.m_rows || m_cols == mtx.m_cols && "Matrix dimension must be the same.");
 		std::transform(m_buffer.begin(), m_buffer.end(), mtx.m_buffer.begin(), m_buffer.begin(), std::plus<>{});
 		return *this;
 	}
-	MyMatrix<T>  operator-(MyMatrix<T> const& mtx) const
+	MyMatrix  operator-(MyMatrix const& mtx) const
 	{
 		MyMatrix<T> result(*this);
 		return result -= mtx;
 	}
-	MyMatrix<T>& operator-=(MyMatrix<T> const& mtx)
+	MyMatrix& operator-=(MyMatrix const& mtx)
 	{
 		assert(m_rows == mtx.m_rows || m_cols == mtx.m_cols && "Matrix dimension must be the same.");
 		std::transform(m_buffer.begin(), m_buffer.end(), mtx.m_buffer.begin(), m_buffer.begin(), std::minus<>{});
 
 		return *this;
 	}
-	MyMatrix<T>  operator*(MyMatrix<T> const& mtx) const
+	MyMatrix  operator*(MyMatrix const& mtx) const
 	{
 		MyMatrix<T> tmp(*this);
 		return tmp *= mtx;
 	}
-	MyMatrix<T>  operator*=(MyMatrix<T> const& mtx)
+	MyMatrix  operator*=(MyMatrix const& mtx)
 	{
 		assert(m_cols == mtx.m_rows && "Invalid Matrix demensions.");
 		MyMatrix<value_type> result(m_rows, mtx.m_cols);
@@ -166,7 +177,7 @@ public:
 	}
 
 	// Comparision
-	bool operator==(MyMatrix<T> const& mtx) const noexcept
+	bool operator==(MyMatrix const& mtx) const noexcept
 	{
 		if (m_rows != mtx.m_rows || m_cols != mtx.m_cols)
 			return false;
@@ -175,25 +186,25 @@ public:
 
 		return true;
 	}
-	bool operator!=(MyMatrix<T> const& mtx) const noexcept { return !(*this == mtx); }
+	bool operator!=(MyMatrix const& mtx) const noexcept { return !(*this == mtx); }
 
 	// Matrix/scalar operations
-	MyMatrix<T>& operator+(const T& value)
+	MyMatrix& operator+(const T& value)
 	{
 		std::transform(m_buffer.begin(), m_buffer.end(), m_buffer.begin(), [&value](const T index) {return index + value; });
 		return *this;
 	}
-	MyMatrix<T>& operator-(const T& value)
+	MyMatrix& operator-(const T& value)
 	{
 		std::transform(m_buffer.begin(), m_buffer.end(), m_buffer.begin(), [&value](const T index) {return index - value; });
 		return *this;
 	}
-	MyMatrix<T>& operator*(const T& value)
+	MyMatrix& operator*(const T& value)
 	{
 		std::transform(m_buffer.begin(), m_buffer.end(), m_buffer.begin(), [&value](T index) {return index * value; });
 		return *this;
 	}
-	MyMatrix<T>& operator/(const T& value)
+	MyMatrix& operator/(const T& value)
 	{
 		std::transform(m_buffer.begin(), m_buffer.end(), m_buffer.begin(), [&value](T index) {return index / value; });
 		return *this;
@@ -201,9 +212,9 @@ public:
 };
 
 template <typename T>
-std::ostream& operator<<(std::ostream& out, MyMatrix<T> const& m)
+std::ostream& operator<<(std::ostream& out, MyMatrix<T> const& mtx)
 {
-	m.print(out);
+	mtx.print(out);
 	return out;
 }
 template <typename T>
