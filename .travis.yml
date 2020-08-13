@@ -1,6 +1,9 @@
 language: cpp
 compiler: gcc
 
+before_install:
+  - chmod +x ./Matrix/src/main.cpp
+
 script:
 - g++ ./Matrix/src/main.cpp -std=c++17 -o travis_gcc_cpp17
 - ./travis_gcc_cpp98
