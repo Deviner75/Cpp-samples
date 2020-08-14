@@ -83,8 +83,9 @@ int main()
 		a = symmetric(a);
 		std::cout << a << "\n";
 
-		std::vector<float> vec{0,1,0,3,0,5,6,5,7};
-		MyMatrix<float> mtx4(vec.begin(), vec.end(), 3, 3);
+		std::vector<float> vec{0,1,0,3,0,5,6,5,7,0,0,0};
+		MyMatrix<float> mtx4(vec.begin(), vec.end(), 4, 3);
+		std::cout << mtx4;
 	}
 
 	system("pause");

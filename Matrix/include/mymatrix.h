@@ -39,11 +39,12 @@ public:
 	{
 		*this = std::move(move);
 	}
-	explicit MyMatrix<T>(value_type begin, value_type end, size_type dimx, size_type dimy)
+	explicit MyMatrix<T>(iterator begin, iterator end, size_type dimx, size_type dimy)
 		: m_rows(dimx)
 		, m_cols(dimy)
+		, m_buffer(std::distance(begin, end))
 	{
-		std::copy(to_vector.begin(), to_vector.end(), m_buffer.begin());
+		std::copy(begin, end, m_buffer.begin());
 	}
 	// Copy assignment
 	MyMatrix& operator=(MyMatrix const& copy)
