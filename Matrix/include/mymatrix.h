@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include <iostream>
@@ -25,7 +26,7 @@ public:
 	MyMatrix(size_type dimx = 3, size_type dimy = 3)
 		: m_rows(dimx)
 		, m_cols(dimy)
-		, m_buffer(dimx * dimy)
+		, m_buffer(dimx* dimy)
 	{}
 	// Copy constructor
 	MyMatrix(MyMatrix const& copy)
@@ -39,8 +40,10 @@ public:
 		*this = std::move(move);
 	}
 	explicit MyMatrix<T>(value_type begin, value_type end, size_type dimx, size_type dimy)
+		: m_rows(dimx)
+		, m_cols(dimy)
 	{
-
+		std::copy(to_vector.begin(), to_vector.end(), m_buffer.begin());
 	}
 	// Copy assignment
 	MyMatrix& operator=(MyMatrix const& copy)
@@ -120,17 +123,9 @@ public:
 	{ return m_rows; }
 	size_type cols() const
 	{ return m_cols; }
-	void print(std::ostream& out) const
-	{
-		if (!m_buffer.empty()) {
-			for (size_t i = 0; i < m_rows; i++) {
-				for (size_t j = 0; j < m_cols; j++) {
-					out << m_buffer[m_cols * i + j] << ' ';
-				}
-				out << std::endl;
-			}
-		}
-	}
+
+	template<class T> // linkage error without this!
+	friend std::ostream& operator<<(std::ostream& out, MyMatrix<T> const& mtx);
 
 	// Matrix mathematical operations
 	MyMatrix  operator+(MyMatrix const& mtx) const
@@ -182,7 +177,7 @@ public:
 		if (m_rows != mtx.m_rows || m_cols != mtx.m_cols)
 			return false;
 
-		std::for_each(m_buffer.cbegin(), m_buffer.cend(), [&](const size_type i) { return m_buffer[i] != mtx.m_buffer[i]; });
+		std::for_each(m_buffer.begin(), m_buffer.end(), [&](const unsigned int i) { return m_buffer[i] != mtx.m_buffer[i]; });
 
 		return true;
 	}
@@ -214,7 +209,15 @@ public:
 template <typename T>
 std::ostream& operator<<(std::ostream& out, MyMatrix<T> const& mtx)
 {
-	mtx.print(out);
+		std::size_t rows = mtx.rows();
+		std::size_t cols = mtx.cols();
+
+		for (size_t i = 0; i < rows; i++) {
+			for (size_t j = 0; j < cols; j++) {
+				out << mtx(i,j) << ' ';
+			}
+			out << "\n";
+		}
 	return out;
 }
 template <typename T>
