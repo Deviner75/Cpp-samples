@@ -118,6 +118,8 @@ public:
 	{ return m_rows; }
 	size_type cols() const
 	{ return m_cols; }
+	size_type size() const
+	{ return m_buffer.size(); }
 
 	// Matrix mathematical operations
 	template<class U>
