@@ -126,10 +126,8 @@ public:
     size_type cols() const
     { return m_cols; }
 
-    template<class T> // linkage error without this!
-    friend std::ostream& operator<<(std::ostream& out, MyMatrix<T> const& mtx);
-
     // Matrix mathematical operations
+
     MyMatrix  operator+(MyMatrix const& mtx) const
     {
         MyMatrix<T> result(*this);
@@ -208,6 +206,7 @@ public:
     }
 };
 
+// << overload doesn't use private members, hence friend was useless
 template <typename T>
 std::ostream& operator<<(std::ostream& out, MyMatrix<T> const& mtx)
 {

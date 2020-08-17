@@ -4,16 +4,12 @@
 int main()
 {
 	{
-		MyMatrix<float> fm(3,3);
-		MyMatrix<int> im(3,3);
-		auto = fm + fm;
+		MyMatrix<float> a{ 3, 3 };
+		std::cout << a << "\n";
 
-		//MyMatrix<float> a{ 3, 3 };
-		//std::cout << a << "\n";
-
-		//std::cout << "ident a" << std::endl;
-		//a.ident();
-		//std::cout << a;
+		std::cout << "ident a" << std::endl;
+		a.ident();
+		std::cout << a;
 
 		//std::cout << "copy construct b(a)" << std::endl;
 		//MyMatrix<float> b(a);
