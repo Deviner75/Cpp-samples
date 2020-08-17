@@ -51,7 +51,7 @@ public:
     MyMatrix& operator=(MyMatrix const& copy)
     {
         // Copy and Swap idiom
-        MyMatrix<value_type> tmp(copy);
+        MyMatrix tmp(copy);
         tmp.swap(*this);
         return *this;
     }
@@ -104,10 +104,6 @@ public:
                 m_buffer[m_cols * x + y] = static_cast<T>(x == y); // CORRECT ?
         }
     }
-    void fill(value_type value)
-    {
-        std::fill(m_buffer.begin(), m_buffer.end(), value);
-    }
     void fillRand()
     {
         std::generate(m_buffer.begin(), m_buffer.end(), []() {return std::rand() % 10; });
@@ -127,28 +123,20 @@ public:
     { return m_cols; }
 
     // Matrix mathematical operations
-
-    MyMatrix  operator+(MyMatrix const& mtx) const
+    template<class U>
+    MyMatrix& operator+=(MyMatrix<U> const& mtx)
     {
-        MyMatrix<T> result(*this);
-        return result += mtx;
-    }
-    MyMatrix& operator+=(MyMatrix const& mtx)
-    {
-        assert(m_rows == mtx.m_rows || m_cols == mtx.m_cols && "Matrix dimension must be the same.");
-        std::transform(m_buffer.begin(), m_buffer.end(), mtx.m_buffer.begin(), m_buffer.begin(), std::plus<>{});
+        if (m_rows != mtx.rows() || m_cols != mtx.cols())
+            throw std::invalid_argument("Matrix dimension must be the same.");
+        std::transform(m_buffer.begin(), m_buffer.end(), mtx.begin(), m_buffer.begin(), std::plus<>{});
         return *this;
     }
-    MyMatrix  operator-(MyMatrix const& mtx) const
+    template<class U>
+    MyMatrix& operator-=(MyMatrix<U> const& mtx)
     {
-        MyMatrix<T> result(*this);
-        return result -= mtx;
-    }
-    MyMatrix& operator-=(MyMatrix const& mtx)
-    {
-        assert(m_rows == mtx.m_rows || m_cols == mtx.m_cols && "Matrix dimension must be the same.");
-        std::transform(m_buffer.begin(), m_buffer.end(), mtx.m_buffer.begin(), m_buffer.begin(), std::minus<>{});
-
+        if (m_rows != mtx.rows() || m_cols != mtx.cols())
+            throw std::invalid_argument("Matrix dimension must be the same.");
+        std::transform(m_buffer.begin(), m_buffer.end(), mtx.begin(), m_buffer.begin(), std::minus<>{});
         return *this;
     }
     MyMatrix  operator*(MyMatrix const& mtx) const
@@ -254,3 +242,15 @@ MyMatrix<T> symmetric(MyMatrix<T> const& mtx)
     return mtx * transpose(mtx);
 }
 #endif // MATRIX_H
+
+// Matrix mathematical operations
+template <typename T, typename U>
+MyMatrix<T>  operator+(MyMatrix<T> mtx1, MyMatrix<U> const& mtx2)
+{
+    return mtx1 += mtx2;
+}
+template <typename T, typename U>
+MyMatrix<T>  operator-(MyMatrix<T> mtx1, MyMatrix<U> const& mtx2)
+{
+    return mtx1 -= mtx2;
+}

@@ -4,24 +4,31 @@
 int main()
 {
 	{
-		MyMatrix<float> a{ 3, 3 };
-		std::cout << a << "\n";
+		MyMatrix<float> fm{ 3, 3 };
+		std::cout << "fill fm" << std::endl;
+		std::fill(fm.begin(), fm.end(), 3);
+		std::cout << fm;
 
-		std::cout << "ident a" << std::endl;
-		a.ident();
-		std::cout << a;
+		//std::cout << "ident fm" << std::endl;
+		//fm.ident();
+		//std::cout << fm;
 
-		//std::cout << "copy construct b(a)" << std::endl;
-		//MyMatrix<float> b(a);
-		//std::cout << b;
+		std::cout << "iterator constructor im" << std::endl;
+		std::vector<int> vec{0,1,0,3,0,5,6,5,7};
+		MyMatrix<int> im(vec.begin(), vec.end(), 3, 3);
+		std::cout << im;
 
-		//std::cout << "fill a" << std::endl;
-		//a.fill(3);
-		//std::cout << a;
+		std::cout << "fm += im" << std::endl;
+		fm += im;
+		std::cout << fm;
 
-		//std::cout << "a + b" << std::endl;
-		//a = a + b;
-		//std::cout << a;
+		std::cout << "im += fm" << std::endl;
+		im += fm;
+		std::cout << im;
+
+		std::cout << "auto doppel = fm + im" << std::endl;
+		auto doppel = fm + im;
+		std::cout << doppel;
 
 		//std::cout << "a - b" << std::endl;
 		//a = a - b;
