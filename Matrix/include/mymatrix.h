@@ -7,8 +7,9 @@
 #include <vector>
 #include <cassert>
 #include <functional>
+#include <type_traits>
 
-template <typename T>
+template<typename T>
 class MyMatrix
 {
 public:
@@ -86,30 +87,35 @@ public:
 	reference operator()(const size_type x, const size_type y)
 	{
 		size_type index = m_cols * x + y;
-		assert(index < m_buffer.size() && "Index is out of range");
+		if (index > m_buffer.size()) 
+			throw std::invalid_argument("The index is out of range.");
 		return m_buffer[index];
 	}
 	const_reference operator()(const size_type x, const size_type y) const
 	{
 		size_type index = m_cols * x + y;
-		assert(index < m_buffer.size() && "Index is out of range");
+		if (index > m_buffer.size()) 
+			throw std::invalid_argument("The index is out of range.");
 		return m_buffer[index];
 	}
 	reference operator[](size_type index)
 	{
-		assert(index < m_buffer.size() && "Index is out of range");
+		if (index > m_buffer.size()) 
+			throw std::invalid_argument("The index is out of range.");
 		return m_buffer[index];
 	}
 	const_reference operator[](size_type index) const
 	{
-		assert(index < m_buffer.size() && "Index is out of range");
+		if (index > m_buffer.size()) 
+			throw std::invalid_argument("The index is out of range.");
 		return m_buffer[index];
 	}
 
 	// Mutating functions
 	void ident()
 	{
-		assert(m_rows == m_cols && "Matrix must be square!");
+		if (m_rows != m_cols)
+			throw std::invalid_argument("The matrix must be square!");
 		for (size_type x = 0; x < m_rows; ++x) {
 			for (size_type y = 0; y < m_cols; ++y)
 				m_buffer[m_cols * x + y] = static_cast<>(x == y); // CORRECT ?
@@ -118,9 +124,9 @@ public:
 	void swap(MyMatrix<value_type>& other) noexcept
 	{
 		using std::swap;
-		swap(this->m_rows, other.m_rows);
-		swap(this->m_cols, other.m_cols);
-		swap(this->m_buffer, other.m_buffer);
+		swap(m_rows,   other.m_rows);
+		swap(m_cols,   other.m_cols);
+		swap(m_buffer, other.m_buffer);
 	}
 
 	// Inspecting functions
@@ -136,7 +142,7 @@ public:
 	MyMatrix& operator+=(MyMatrix<U> const& mtx)
 	{
 		if (m_rows != mtx.rows() || m_cols != mtx.cols())
-			throw std::invalid_argument("Matrix dimension must be the same.");
+			throw std::invalid_argument("Matrices dimensions must match!");
 		std::transform(m_buffer.begin(), m_buffer.end(), mtx.begin(), m_buffer.begin(), std::plus<>{});
 		return *this;
 	}
@@ -144,7 +150,7 @@ public:
 	MyMatrix& operator-=(MyMatrix<U> const& mtx)
 	{
 		if (m_rows != mtx.rows() || m_cols != mtx.cols())
-			throw std::invalid_argument("Matrix dimension must be the same.");
+			throw std::invalid_argument("Matrices dimensions must match!");
 		std::transform(m_buffer.begin(), m_buffer.end(), mtx.begin(), m_buffer.begin(), std::minus<>{});
 		return *this;
 	}
@@ -152,7 +158,7 @@ public:
 	MyMatrix operator*=(MyMatrix<U> const& mtx)
 	{
 		if (m_cols != mtx.rows())
-			throw std::invalid_argument("Invalid Matrix demensions.");
+			throw std::invalid_argument("Invalid Matrix dimensions.");
 
 		MyMatrix<value_type> result(m_rows, mtx.cols());
 
@@ -176,22 +182,26 @@ public:
 	// Matrix scalar operations
 	MyMatrix& operator+(const T& value)
 	{
-		std::transform(m_buffer.begin(), m_buffer.end(), m_buffer.begin(), [&value](const T index) {return index + value; });
+		std::transform(m_buffer.begin(), m_buffer.end(), m_buffer.begin(),
+					   [&value](const value_type index) {return index + value; });
 		return *this;
 	}
 	MyMatrix& operator-(const T& value)
 	{
-		std::transform(m_buffer.begin(), m_buffer.end(), m_buffer.begin(), [&value](const T index) {return index - value; });
+		std::transform(m_buffer.begin(), m_buffer.end(), m_buffer.begin(), 
+					   [&value](const value_type index) {return index - value; });
 		return *this;
 	}
 	MyMatrix& operator*(const T& value)
 	{
-		std::transform(m_buffer.begin(), m_buffer.end(), m_buffer.begin(), [&value](T index) {return index * value; });
+		std::transform(m_buffer.begin(), m_buffer.end(), m_buffer.begin(), 
+					   [&value](const value_type index) {return index * value; });
 		return *this;
 	}
 	MyMatrix& operator/(const T& value)
 	{
-		std::transform(m_buffer.begin(), m_buffer.end(), m_buffer.begin(), [&value](T index) {return index / value; });
+		std::transform(m_buffer.begin(), m_buffer.end(), m_buffer.begin(), 
+					   [&value](const value_type index) {return index / value; });
 		return *this;
 	}
 
@@ -205,7 +215,7 @@ public:
 	MyMatrix operator+() const
 	{
 		MyMatrix result(*this);
-		std::transform(result.begin(), result.end(), result.begin(), [](unsigned char c) { return std::abs(c); });
+		std::transform(result.begin(), result.end(), result.begin(), [](value_type c) { return std::abs(c); });
 		return result;
 	}
 };
@@ -238,11 +248,11 @@ MyMatrix<T> inverse(MyMatrix<T> const& mtx)
 template <typename T>
 MyMatrix<T> symmetric(MyMatrix<T> const& mtx)
 {
-	assert(mtx.cols() == mtx.rows() && "Invalid Matrix demensions.");
+	if (mtx.cols() != mtx.rows())
+		throw std::invalid_argument("The matrix must be square!");
 	MyMatrix<T> result(mtx);
 	return mtx * transpose(mtx);
 }
-#endif // MATRIX_H
 
 // Matrix mathematical operations
 template <typename T, typename U>
@@ -260,3 +270,5 @@ MyMatrix<T>  operator*(MyMatrix<T> mtx1, MyMatrix<U> const& mtx2)
 {
 	return mtx1 *= mtx2;
 }
+
+#endif // MATRIX_H

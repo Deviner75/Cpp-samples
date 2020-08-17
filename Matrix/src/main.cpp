@@ -10,7 +10,7 @@ std::ostream& operator<<(std::ostream& out, MyMatrix<T> const& mtx)
 
 	for (size_t i = 0; i < rows; i++) {
 		for (size_t j = 0; j < cols; j++) {
-			out << std::setw(3) << mtx(i, j);
+			out << std::setw(5) << mtx(i, j);
 		}
 		out << "\n";
 	}
@@ -21,7 +21,7 @@ int main()
 {
 	{
 		// CONSTRUCTORS
-		MyMatrix<float> fm{ 3, 3 };
+		MyMatrix<float> fm;
 		std::cout << "fill fm" << "\n";
 		std::fill(fm.begin(), fm.end(), 3);
 		std::cout << fm;
@@ -32,6 +32,7 @@ int main()
 
 		std::cout << "iterator constructor im" << "\n";
 		MyMatrix<std::string> sm{ 3, 2, { "one", "two", "three", "four", "five", "six" } };
+		std::cout << sm;
 
 		std::cout << "iterator constructor im" << "\n";
 		std::vector<int> vec{0,1,0,3,0,5,6,5,7};
@@ -52,14 +53,13 @@ int main()
 
 		std::cout << "auto doppel = fm * im" << "\n";
 		doppel = fm * im;
-		// fm = im - fm; ??
 		std::cout << doppel;
 
-		//std::cout << "-fm" << "\n";
-		//std::cout << -fm;
+		std::cout << "-fm" << "\n";
+		std::cout << -fm;
 
-		//std::cout << "+fm" << "\n";
-		//std::cout << +fm;
+		std::cout << "+fm" << "\n";
+		std::cout << +fm;
 
 
 
