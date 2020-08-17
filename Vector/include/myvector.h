@@ -1,233 +1,274 @@
-// An std::vector like container.
-// Mainly done for learning processes of memory mangment and various semantics.
-// Base source: https://lokiastari.com/blog/2016/03/12/vector-resize/index.html
+// file mymatrix.h
+#ifndef MATRIX_H
+#define MATRIX_H
 
-
-#include <type_traits>
-#include <memory>
+#include <iostream>
 #include <algorithm>
-#include <stdexcept>
-#include <iterator>
+#include <vector>
+#include <cassert>
+#include <functional>
+#include <type_traits>
 
 template<typename T>
-class MyVector
+class MyMatrix
 {
 public:
 	using value_type = T;
-	using reference = T&;
-	using const_reference = T const&;
-	using pointer = T*;
-	using const_pointer = T const*;
-	using iterator = T*;
-	using const_iterator = T const*;
-	using riterator = std::reverse_iterator<iterator>;
-	using const_riterator = std::reverse_iterator<const_iterator>;
-	using difference_type = std::ptrdiff_t;
+	using reference = value_type&;
+	using const_reference = value_type const&;
+	using iterator = typename std::vector<value_type>::iterator;
+	using const_iterator = typename std::vector<value_type>::const_iterator;
 	using size_type = std::size_t;
 
 private:
-	size_type       m_capacity;
-	size_type       m_length;
-	T* m_buffer;
-
-	struct Deleter
-	{
-		void operator()(T* m_buffer) const
-		{
-			::operator delete(m_buffer);
-		}
-	};
+	size_type m_rows;
+	size_type m_cols;
+	std::vector<value_type> m_buffer;
 
 public:
-	MyVector(int capacity = 10)
-		: m_capacity(capacity)
-		, m_length(0)
-		, m_buffer(static_cast<T*>(::operator new(sizeof(T)* capacity)))
+	MyMatrix(size_type dimx = 3, size_type dimy = 3)
+		: m_rows(dimx)
+		, m_cols(dimy)
+		, m_buffer(dimx * dimy)
 	{}
-	template<typename I>
-	MyVector(I begin, I end)
-		: m_capacity(std::distance(begin, end))
-		, m_length(0)
-		, m_buffer(static_cast<T*>(::operator new(sizeof(T)* m_capacity)))
-	{
-		for (auto loop = begin; loop != end; ++loop) {
-			pushBackInternal(*loop);
-		}
-	}
-	MyVector(std::initializer_list<T> const& list)
-		: MyVector(std::begin(list), std::end(list))
+	// Copy constructor
+	MyMatrix(MyMatrix const& copy)
+		: m_rows(copy.m_rows)
+		, m_cols(copy.m_cols)
+		, m_buffer(copy.m_buffer)
 	{}
-	~MyVector()
+	// Move constructor
+	MyMatrix(MyMatrix&& move) noexcept
 	{
-		std::unique_ptr<T, Deleter>     deleter(m_buffer, Deleter());
-		clearElements();
+		*this = std::move(move);
 	}
-	MyVector(MyVector const& copy)
-		: m_capacity(copy.m_length)
-		, m_length(0)
-		, m_buffer(static_cast<T*>(::operator new(sizeof(T)* m_capacity)))
+	// Initializer list constructor
+	MyMatrix(size_type dimx, size_type dimy, std::initializer_list<T> init)
+		: m_rows(dimx)
+		, m_cols(dimy)
+		, m_buffer(dimx * dimy)
 	{
-		try {
-			for (int loop = 0; loop < copy.m_length; ++loop) {
-				push_back(copy.m_buffer[loop]);
-			}
-		} catch (...) {
-			std::unique_ptr<T, Deleter>     deleter(m_buffer, Deleter());
-			clearElements();
-			throw;
-		}
+		const size_type minlen{ std::min(m_buffer.size(), init.size()) };
+		std::copy_n(init.begin(), minlen, m_buffer.begin());
 	}
-	MyVector& operator=(MyVector const& copy)
+	// Iterator constructor
+	explicit MyMatrix<T>(iterator begin, iterator end, size_type dimx, size_type dimy)
+		: m_rows(dimx)
+		, m_cols(dimy)
+		, m_buffer(std::distance(begin, end))
 	{
-		copyAssign(copy);
+		std::copy(begin, end, m_buffer.begin());
+	}
+	// Copy assignment
+	MyMatrix& operator=(MyMatrix const& copy)
+	{
+		// Copy and Swap idiom
+		MyMatrix tmp(copy);
+		tmp.swap(*this);
 		return *this;
 	}
-	MyVector(MyVector&& move) noexcept
-		: m_capacity(0)
-		, m_length(0)
-		, m_buffer(nullptr)
-	{
-		move.swap(*this);
-	}
-	MyVector& operator=(MyVector&& move) noexcept
+	// Move assignment
+	MyMatrix& operator=(MyMatrix&& move) noexcept
 	{
 		move.swap(*this);
 		return *this;
 	}
-	void swap(MyVector& other) noexcept
-	{
-		using std::swap;
-		swap(m_capacity, other.m_capacity);
-		swap(m_length, other.m_length);
-		swap(m_buffer, other.m_buffer);
-	}
-
-	// Non-Mutating functions
-	size_type           size() const { return m_length; }
-	size_type           capacity() const { return m_capacity; }
-	bool                empty() const { return m_length == 0; }
-
-	// Validated element access
-	reference           at(size_type index) { validateIndex(index); return m_buffer[index]; }
-	const_reference     at(size_type index) const { validateIndex(index); return m_buffer[index]; }
-
-	// Non-Validated element access
-	reference           operator[](size_type index) { return m_buffer[index]; }
-	const_reference     operator[](size_type index) const { return m_buffer[index]; }
-	reference           front() { return m_buffer[0]; }
-	const_reference     front() const { return m_buffer[0]; }
-	reference           back() { return m_buffer[m_length - 1]; }
-	const_reference     back() const { return m_buffer[m_length - 1]; }
 
 	// Iterators
-	iterator            begin() { return m_buffer; }
-	riterator           rbegin() { return riterator(end()); }
-	const_iterator      begin() const { return m_buffer; }
-	const_riterator     rbegin() const { return const_riterator(end()); }
+	iterator       begin() { return m_buffer.begin(); }
+	const_iterator begin()  const { return m_buffer.begin(); }
+	const_iterator cbegin() const { return begin(); }
 
-	iterator            end() { return m_buffer + m_length; }
-	riterator           rend() { return riterator(begin()); }
-	const_iterator      end() const { return m_buffer + m_length; }
-	const_riterator     rend() const { return const_riterator(begin()); }
+	iterator       end() { return m_buffer.end(); }
+	const_iterator end()    const { return m_buffer.end(); }
+	const_iterator cend()   const { return end(); }
 
-	const_iterator      cbegin() const { return begin(); }
-	const_riterator     crbegin() const { return rbegin(); }
-	const_iterator      cend() const { return end(); }
-	const_riterator     crend() const { return rend(); }
-
-	// Comparison
-	bool operator!=(MyVector const& rhs) const { return !(*this == rhs); }
-	bool operator==(MyVector const& rhs) const
+	// Access operators with validation
+	reference operator()(const size_type x, const size_type y)
 	{
-		return  (size() == rhs.size())
-			&& std::equal(begin(), end(), rhs.begin());
+		size_type index = m_cols * x + y;
+		if (index > m_buffer.size()) 
+			throw std::invalid_argument("The index is out of range.");
+		return m_buffer[index];
+	}
+	const_reference operator()(const size_type x, const size_type y) const
+	{
+		size_type index = m_cols * x + y;
+		if (index > m_buffer.size()) 
+			throw std::invalid_argument("The index is out of range.");
+		return m_buffer[index];
+	}
+	reference operator[](size_type index)
+	{
+		if (index > m_buffer.size()) 
+			throw std::invalid_argument("The index is out of range.");
+		return m_buffer[index];
+	}
+	const_reference operator[](size_type index) const
+	{
+		if (index > m_buffer.size()) 
+			throw std::invalid_argument("The index is out of range.");
+		return m_buffer[index];
 	}
 
 	// Mutating functions
-	void push_back(value_type const& value)
+	void ident()
 	{
-		resizeIfRequire();
-		pushBackInternal(value);
-	}
-	void push_back(value_type&& value)
-	{
-		resizeIfRequire();
-		moveBackInternal(std::move(value));
-	}
-	template<typename... Args>
-	void emplace_back(Args&&... args)
-	{
-		resizeIfRequire();
-		emplaceBackInternal(std::move(args)...);
-	}
-	void pop_back()
-	{
-		--m_length;
-		m_buffer[m_length].~T();
-	}
-	void reserve(size_type capacityUpperBound)
-	{
-		if (capacityUpperBound > m_capacity) {
-			reserveCapacity(capacityUpperBound);
+		if (m_rows != m_cols)
+			throw std::invalid_argument("The matrix must be square!");
+		for (size_type x = 0; x < m_rows; ++x) {
+			for (size_type y = 0; y < m_cols; ++y)
+				m_buffer[m_cols * x + y] = static_cast<>(x == y); // CORRECT ?
 		}
 	}
-private:
-	void validateIndex(size_type index) const
+	void swap(MyMatrix<value_type>& other) noexcept
 	{
-		if (index >= m_length) {
-			throw std::out_of_range("Out of Range");
-		}
-	}
-	void resizeIfRequire()
-	{
-		if (m_length == m_capacity) {
-			size_type newCapacity = std::max(2.0, m_capacity * 1.5);
-			reserveCapacity(newCapacity);
-		}
-	}
-	void reserveCapacity(size_type newCapacity)
-	{
-		MyVector<T> tmpBuffer(newCapacity);
-		simpleCopy(tmpBuffer);
-		tmpBuffer.swap(*this);
+		using std::swap;
+		swap(m_rows,   other.m_rows);
+		swap(m_cols,   other.m_cols);
+		swap(m_buffer, other.m_buffer);
 	}
 
-	// Adds new element to the end using placement new
-	void pushBackInternal(T const& value)
+	// Inspecting functions
+	size_type rows() const
+	{ return m_rows; }
+	size_type cols() const
+	{ return m_cols; }
+	size_type size() const
+	{ return m_buffer.size(); }
+
+	// Matrix mathematical operations
+	template<class U>
+	MyMatrix& operator+=(MyMatrix<U> const& mtx)
 	{
-		new (m_buffer + m_length) T(value);
-		++m_length;
+		if (m_rows != mtx.rows() || m_cols != mtx.cols())
+			throw std::invalid_argument("Matrices dimensions must match!");
+		std::transform(m_buffer.begin(), m_buffer.end(), mtx.begin(), m_buffer.begin(), std::plus<>{});
+		return *this;
 	}
-	// Move new element to the end using placement new
-	void moveBackInternal(T&& value)
+	template<class U>
+	MyMatrix& operator-=(MyMatrix<U> const& mtx)
 	{
-		new (m_buffer + m_length) T(std::move(value));
-		++m_length;
+		if (m_rows != mtx.rows() || m_cols != mtx.cols())
+			throw std::invalid_argument("Matrices dimensions must match!");
+		std::transform(m_buffer.begin(), m_buffer.end(), mtx.begin(), m_buffer.begin(), std::minus<>{});
+		return *this;
 	}
-	// Move a list of elements to the end using placement new
-	template<typename... Args>
-	void emplaceBackInternal(Args&&... args)
+	template<class U>
+	MyMatrix operator*=(MyMatrix<U> const& mtx)
 	{
-		new (m_buffer + m_length) T(std::move(args)...);
-		++m_length;
-	}
-	void simpleCopy(MyVector<T>& dst)
-	{
-		std::for_each(m_buffer, m_buffer + m_length,
-					  [&dst](T const& v) {dst.pushBackInternal(v); }
-		);
-	}
-	// Calls the destructor on all the members in reverse order
-	void clearElements()
-	{
-		for (int loop = 0; loop < m_length; ++loop) {
-			m_buffer[m_length - 1 - loop].~T();
+		if (m_cols != mtx.rows())
+			throw std::invalid_argument("Invalid Matrix dimensions.");
+
+		MyMatrix<value_type> result(m_rows, mtx.cols());
+
+		for (size_type r = 0; r < m_rows; r++) {
+			for (size_type c = 0; c < mtx.cols(); c++) {
+				for (size_type i = 0; i < m_cols; i++) {
+					result.m_buffer[mtx.cols() * r + c] += m_buffer[m_cols * r + i] * mtx[mtx.cols() * i + c];
+				}
+			}
 		}
+		return result;
 	}
-	// Copy and Swap idiom
-	void copyAssign(MyVector const& copy)
+
+	// Comparision
+	bool operator==(MyMatrix const& mtx) const noexcept
 	{
-		MyVector<T>  tmp(copy);
-		tmp.swap(*this);
+		return m_rows == mtx.m_rows && m_cols == mtx.m_cols && m_buffer == mtx.m_buffer;
+	}
+	bool operator!=(MyMatrix const& mtx) const noexcept { return !(*this == mtx); }
+
+	// Matrix scalar operations
+	MyMatrix& operator+(const T& value)
+	{
+		std::transform(m_buffer.begin(), m_buffer.end(), m_buffer.begin(),
+					   [&value](const value_type index) {return index + value; });
+		return *this;
+	}
+	MyMatrix& operator-(const T& value)
+	{
+		std::transform(m_buffer.begin(), m_buffer.end(), m_buffer.begin(), 
+					   [&value](const value_type index) {return index - value; });
+		return *this;
+	}
+	MyMatrix& operator*(const T& value)
+	{
+		std::transform(m_buffer.begin(), m_buffer.end(), m_buffer.begin(), 
+					   [&value](const value_type index) {return index * value; });
+		return *this;
+	}
+	MyMatrix& operator/(const T& value)
+	{
+		std::transform(m_buffer.begin(), m_buffer.end(), m_buffer.begin(), 
+					   [&value](const value_type index) {return index / value; });
+		return *this;
+	}
+
+	// Unary operators
+	MyMatrix operator-() const
+	{
+		MyMatrix result(*this);
+		std::transform(result.begin(), result.end(), result.begin(), std::negate<>{});
+		return result;
+	}
+	MyMatrix operator+() const
+	{
+		MyMatrix result(*this);
+		std::transform(result.begin(), result.end(), result.begin(), [](value_type c) { return std::abs(c); });
+		return result;
 	}
 };
+
+template <typename T>
+MyMatrix<T> transpose(MyMatrix<T> const& mtx)
+{
+	std::size_t rows = mtx.rows();
+	std::size_t cols = mtx.cols();
+
+	MyMatrix<T> result(cols, rows);
+
+	for (std::size_t r = 0; r < rows * cols; r++) {
+		std::size_t i = r / rows;
+		std::size_t j = r % rows;
+		result[r] = mtx[cols * j + i];
+	}
+
+	return result;
+}
+template <typename T>
+MyMatrix<T> inverse(MyMatrix<T> const& mtx)
+{
+	MyMatrix<T> result(mtx);
+
+	std::transform(result.begin(), result.end(), result.begin(), [](const T index) {return 1 / index; });
+
+	return result;
+}
+template <typename T>
+MyMatrix<T> symmetric(MyMatrix<T> const& mtx)
+{
+	if (mtx.cols() != mtx.rows())
+		throw std::invalid_argument("The matrix must be square!");
+	MyMatrix<T> result(mtx);
+	return mtx * transpose(mtx);
+}
+
+// Matrix mathematical operations
+template <typename T, typename U>
+MyMatrix<T>  operator+(MyMatrix<T> mtx1, MyMatrix<U> const& mtx2)
+{
+	return mtx1 += mtx2;
+}
+template <typename T, typename U>
+MyMatrix<T>  operator-(MyMatrix<T> mtx1, MyMatrix<U> const& mtx2)
+{
+	return mtx1 -= mtx2;
+}
+template <typename T, typename U>
+MyMatrix<T>  operator*(MyMatrix<T> mtx1, MyMatrix<U> const& mtx2)
+{
+	return mtx1 *= mtx2;
+}
+
+#endif // MATRIX_H

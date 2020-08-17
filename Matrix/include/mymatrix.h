@@ -63,7 +63,7 @@ public:
 	MyMatrix& operator=(MyMatrix const& copy)
 	{
 		// Copy and Swap idiom
-		MyMatrix tmp(copy);
+		MyMatrix<value_type> tmp(copy);
 		tmp.swap(*this);
 		return *this;
 	}
@@ -86,27 +86,25 @@ public:
 	// Access operators with validation
 	reference operator()(const size_type x, const size_type y)
 	{
-		size_type index = m_cols * x + y;
-		if (index > m_buffer.size()) 
+		if (x >= m_rows || y >= m_cols)
 			throw std::invalid_argument("The index is out of range.");
-		return m_buffer[index];
+		return m_buffer[m_cols * x + y];
 	}
 	const_reference operator()(const size_type x, const size_type y) const
 	{
-		size_type index = m_cols * x + y;
-		if (index > m_buffer.size()) 
+		if (x >= m_rows || y >= m_cols)
 			throw std::invalid_argument("The index is out of range.");
-		return m_buffer[index];
+		return m_buffer[m_cols * x + y];
 	}
 	reference operator[](size_type index)
 	{
-		if (index > m_buffer.size()) 
+		if (index > m_buffer.size())
 			throw std::invalid_argument("The index is out of range.");
 		return m_buffer[index];
 	}
 	const_reference operator[](size_type index) const
 	{
-		if (index > m_buffer.size()) 
+		if (index > m_buffer.size())
 			throw std::invalid_argument("The index is out of range.");
 		return m_buffer[index];
 	}
@@ -118,15 +116,16 @@ public:
 			throw std::invalid_argument("The matrix must be square!");
 		for (size_type x = 0; x < m_rows; ++x) {
 			for (size_type y = 0; y < m_cols; ++y)
-				m_buffer[m_cols * x + y] = static_cast<>(x == y); // CORRECT ?
+				m_buffer[m_cols * x + y] = static_cast<T>(x == y);
 		}
 	}
+	
 	void swap(MyMatrix<value_type>& other) noexcept
 	{
 		using std::swap;
-		swap(m_rows,   other.m_rows);
-		swap(m_cols,   other.m_cols);
-		swap(m_buffer, other.m_buffer);
+		swap(this->m_rows, other.m_rows);
+		swap(this->m_cols, other.m_cols);
+		swap(this->m_buffer, other.m_buffer);
 	}
 
 	// Inspecting functions
@@ -180,28 +179,28 @@ public:
 	bool operator!=(MyMatrix const& mtx) const noexcept { return !(*this == mtx); }
 
 	// Matrix scalar operations
-	MyMatrix& operator+(const T& value)
+	template<class U>
+	MyMatrix& operator+=(const U& val)
 	{
-		std::transform(m_buffer.begin(), m_buffer.end(), m_buffer.begin(),
-					   [&value](const value_type index) {return index + value; });
+		std::for_each(m_buffer.begin(), m_buffer.end(), [val](T& item) { item += val; });
 		return *this;
 	}
-	MyMatrix& operator-(const T& value)
+	template<class U>
+	MyMatrix& operator-=(const U& val)
 	{
-		std::transform(m_buffer.begin(), m_buffer.end(), m_buffer.begin(), 
-					   [&value](const value_type index) {return index - value; });
+		std::for_each(m_buffer.begin(), m_buffer.end(), [val](T& item) { item -= val; });
 		return *this;
 	}
-	MyMatrix& operator*(const T& value)
+	template<class U>
+	MyMatrix& operator*=(const U& val)
 	{
-		std::transform(m_buffer.begin(), m_buffer.end(), m_buffer.begin(), 
-					   [&value](const value_type index) {return index * value; });
+		std::for_each(m_buffer.begin(), m_buffer.end(), [val](T& item) { item *= val; });
 		return *this;
 	}
-	MyMatrix& operator/(const T& value)
+	template<class U>
+	MyMatrix& operator/=(const U& val)
 	{
-		std::transform(m_buffer.begin(), m_buffer.end(), m_buffer.begin(), 
-					   [&value](const value_type index) {return index / value; });
+		std::for_each(m_buffer.begin(), m_buffer.end(), [val](T& item) { item /= val; });
 		return *this;
 	}
 
@@ -220,6 +219,7 @@ public:
 	}
 };
 
+// Matrix operators
 template <typename T>
 MyMatrix<T> transpose(MyMatrix<T> const& mtx)
 {
@@ -241,7 +241,8 @@ MyMatrix<T> inverse(MyMatrix<T> const& mtx)
 {
 	MyMatrix<T> result(mtx);
 
-	std::transform(result.begin(), result.end(), result.begin(), [](const T index) {return 1 / index; });
+	std::transform(result.begin(), result.end(), result.begin(), [](const T index) {
+		return (index != 0) ? 1 / index : 0; });
 
 	return result;
 }
@@ -269,6 +270,28 @@ template <typename T, typename U>
 MyMatrix<T>  operator*(MyMatrix<T> mtx1, MyMatrix<U> const& mtx2)
 {
 	return mtx1 *= mtx2;
+}
+
+// Matrix scalar operations
+template <typename T, typename U>
+MyMatrix<T> operator+(MyMatrix<T> mtx, U const& value)
+{
+	return mtx += value;
+}
+template <typename T, typename U>
+MyMatrix<T> operator-(MyMatrix<T> mtx, U const& value)
+{
+	return mtx -= value;
+}
+template <typename T, typename U>
+MyMatrix<T> operator*(MyMatrix<T> mtx, U const& value)
+{
+	return mtx *= value;
+}
+template <typename T, typename U>
+MyMatrix<T> operator/(MyMatrix<T> mtx, U const& value)
+{
+	return mtx /= value;
 }
 
 #endif // MATRIX_H
