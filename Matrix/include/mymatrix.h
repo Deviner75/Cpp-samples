@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <vector>
 #include <cassert>
+#include <functional>
 
 template <typename T>
 class MyMatrix
@@ -162,12 +163,7 @@ public:
     // Comparision
     bool operator==(MyMatrix const& mtx) const noexcept
     {
-        if (m_rows != mtx.m_rows || m_cols != mtx.m_cols)
-            return false;
-
-        std::for_each(m_buffer.begin(), m_buffer.end(), [&](const unsigned int i) { return m_buffer[i] != mtx.m_buffer[i]; });
-
-        return true;
+        return m_rows == mtx.m_rows && m_cols == mtx.m_cols && m_buffer == mtx.m_buffer;
     }
     bool operator!=(MyMatrix const& mtx) const noexcept { return !(*this == mtx); }
 
@@ -191,6 +187,20 @@ public:
     {
         std::transform(m_buffer.begin(), m_buffer.end(), m_buffer.begin(), [&value](T index) {return index / value; });
         return *this;
+    }
+
+    // Unary operators
+    MyMatrix operator-() const
+    {
+        MyMatrix result(*this);
+        std::transform(result.begin(), result.end(), result.begin(), std::negate<>{});
+        return result;
+    }
+    MyMatrix operator+() const
+    {
+        MyMatrix result(*this);
+        std::transform(result.begin(), result.end(), result.begin(), std::abs<>{});
+        return result;
     }
 };
 
