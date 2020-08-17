@@ -1,9 +1,26 @@
 #include "mymatrix.h"
 #include <iostream>
+#include <iomanip>
+
+template <typename T>
+std::ostream& operator<<(std::ostream& out, MyMatrix<T> const& mtx)
+{
+	std::size_t rows = mtx.rows();
+	std::size_t cols = mtx.cols();
+
+	for (size_t i = 0; i < rows; i++) {
+		for (size_t j = 0; j < cols; j++) {
+			out << std::setw(3) << mtx(i, j);
+		}
+		out << "\n";
+	}
+	return out;
+}
 
 int main()
 {
 	{
+		// CONSTRUCTORS
 		MyMatrix<float> fm{ 3, 3 };
 		std::cout << "fill fm" << "\n";
 		std::fill(fm.begin(), fm.end(), 3);
@@ -14,28 +31,35 @@ int main()
 		//std::cout << im;
 
 		std::cout << "iterator constructor im" << "\n";
+		MyMatrix<std::string> sm{ 3, 2, { "one", "two", "three", "four", "five", "six" } };
+
+		std::cout << "iterator constructor im" << "\n";
 		std::vector<int> vec{0,1,0,3,0,5,6,5,7};
 		MyMatrix<int> im(vec.begin(), vec.end(), 3, 3);
 		std::cout << im;
 
-		std::cout << "fm += im" << "\n";
-		fm += im;
-		std::cout << fm;
 
-		// TO DO?
-		//std::cout << "fm = im + fm;" << "\n";
-		//fm = im + fm;
-		//std::cout << fm;
-
+		// Mathematical operations
 		std::cout << "auto doppel = fm + im" << "\n";
 		auto doppel = fm + im;
+		// fm = im + fm; ??
 		std::cout << doppel;
 
-		std::cout << "-fm" << "\n";
-		std::cout << -fm;
+		std::cout << "auto doppel = im - fm" << "\n";
+		auto doppel1 = im - fm;
+		// fm = im - fm; ??
+		std::cout << doppel1;
 
-		std::cout << "+fm" << "\n";
-		std::cout << +fm;
+		std::cout << "auto doppel = fm * im" << "\n";
+		doppel = fm * im;
+		// fm = im - fm; ??
+		std::cout << doppel;
+
+		//std::cout << "-fm" << "\n";
+		//std::cout << -fm;
+
+		//std::cout << "+fm" << "\n";
+		//std::cout << +fm;
 
 
 

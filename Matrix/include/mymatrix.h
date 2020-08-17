@@ -28,7 +28,7 @@ public:
 	MyMatrix(size_type dimx = 3, size_type dimy = 3)
 		: m_rows(dimx)
 		, m_cols(dimy)
-		, m_buffer(dimx* dimy)
+		, m_buffer(dimx * dimy)
 	{}
 	// Copy constructor
 	MyMatrix(MyMatrix const& copy)
@@ -41,6 +41,16 @@ public:
 	{
 		*this = std::move(move);
 	}
+	// Initializer list constructor
+	MyMatrix(size_type dimx, size_type dimy, std::initializer_list<T> init)
+		: m_rows(dimx)
+		, m_cols(dimy)
+		, m_buffer(dimx * dimy)
+	{
+		const size_type minlen{ std::min(m_buffer.size(), init.size()) };
+		std::copy_n(init.begin(), minlen, m_buffer.begin());
+	}
+	// Iterator constructor
 	explicit MyMatrix<T>(iterator begin, iterator end, size_type dimx, size_type dimy)
 		: m_rows(dimx)
 		, m_cols(dimy)
@@ -138,20 +148,18 @@ public:
 		std::transform(m_buffer.begin(), m_buffer.end(), mtx.begin(), m_buffer.begin(), std::minus<>{});
 		return *this;
 	}
-	MyMatrix  operator*(MyMatrix const& mtx) const
+	template<class U>
+	MyMatrix operator*=(MyMatrix<U> const& mtx)
 	{
-		MyMatrix<T> tmp(*this);
-		return tmp *= mtx;
-	}
-	MyMatrix  operator*=(MyMatrix const& mtx)
-	{
-		assert(m_cols == mtx.m_rows && "Invalid Matrix demensions.");
-		MyMatrix<value_type> result(m_rows, mtx.m_cols);
+		if (m_cols != mtx.rows())
+			throw std::invalid_argument("Invalid Matrix demensions.");
+
+		MyMatrix<value_type> result(m_rows, mtx.cols());
 
 		for (size_type r = 0; r < m_rows; r++) {
-			for (size_type c = 0; c < mtx.m_cols; c++) {
+			for (size_type c = 0; c < mtx.cols(); c++) {
 				for (size_type i = 0; i < m_cols; i++) {
-					result.m_buffer[mtx.m_cols * r + c] += m_buffer[m_cols * r + i] * mtx.m_buffer[mtx.m_cols * i + c];
+					result.m_buffer[mtx.cols() * r + c] += m_buffer[m_cols * r + i] * mtx[mtx.cols() * i + c];
 				}
 			}
 		}
@@ -197,26 +205,11 @@ public:
 	MyMatrix operator+() const
 	{
 		MyMatrix result(*this);
-		std::transform(result.begin(), result.end(), result.begin(), static_cast<>(&std::abs));
+		std::transform(result.begin(), result.end(), result.begin(), [](unsigned char c) { return std::abs(c); });
 		return result;
 	}
 };
 
-// << overload doesn't use private members, hence friend was useless
-template <typename T>
-std::ostream& operator<<(std::ostream& out, MyMatrix<T> const& mtx)
-{
-	std::size_t rows = mtx.rows();
-	std::size_t cols = mtx.cols();
-
-	for (size_t i = 0; i < rows; i++) {
-		for (size_t j = 0; j < cols; j++) {
-			out << mtx(i, j) << ' ';
-		}
-		out << "\n";
-	}
-	return out;
-}
 template <typename T>
 MyMatrix<T> transpose(MyMatrix<T> const& mtx)
 {
@@ -261,4 +254,9 @@ template <typename T, typename U>
 MyMatrix<T>  operator-(MyMatrix<T> mtx1, MyMatrix<U> const& mtx2)
 {
 	return mtx1 -= mtx2;
+}
+template <typename T, typename U>
+MyMatrix<T>  operator*(MyMatrix<T> mtx1, MyMatrix<U> const& mtx2)
+{
+	return mtx1 *= mtx2;
 }
